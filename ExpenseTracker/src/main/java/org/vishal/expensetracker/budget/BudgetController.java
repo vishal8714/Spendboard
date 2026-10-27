@@ -30,6 +30,19 @@ public class BudgetController {
         return service.getOverview(yearMonth);
     }
 
+    /** The budget for all spending in a month. (A literal path wins over /{categoryId}.) */
+    @PutMapping("/overall")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void setOverallBudget(@Valid @RequestBody BudgetRequest body) {
+        service.setOverallBudget(body.amount());
+    }
+
+    @DeleteMapping("/overall")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeOverallBudget() {
+        service.setOverallBudget(null);
+    }
+
     @PutMapping("/{categoryId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void setBudget(@PathVariable Long categoryId, @Valid @RequestBody BudgetRequest body) {

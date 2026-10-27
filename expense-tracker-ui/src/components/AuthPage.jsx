@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '../api.js';
+import { IconTrendUp } from './Icons.jsx';
 
 const RESEND_SECONDS = 60;
 
@@ -311,8 +312,8 @@ export default function AuthPage({ onLoggedIn, initialError }) {
     <div className="auth-screen">
       <div className="auth-wrap">
         <div className="auth-brand">
-          <span className="brand-mark brand-mark-lg" aria-hidden="true">
-            <i /><i /><i /><i />
+          <span className="brand-logo brand-logo-lg" aria-hidden="true">
+            <IconTrendUp width={22} height={22} />
           </span>
           <span className="auth-brand-name">Spendboard</span>
         </div>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { categoryColor, currentMonth, formatMoney, monthLabel, shiftMonth } from '../utils.js';
 import Frame from './Frame.jsx';
+import MonthlyBudgetEditor from './MonthlyBudgetEditor.jsx';
 import { IconChevronLeft, IconChevronRight, IconEdit, IconTrash } from './Icons.jsx';
 
 // How full the bar is: under 80% fine, 80–100% close, above 100% over
@@ -14,15 +15,19 @@ function budgetState(spent, budget) {
 export default function BudgetsPage({ notify }) {
   const [month, setMonth] = useState(currentMonth);
   const [items, setItems] = useState([]);
+  const [overallBudget, setOverallBudget] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [editingId, setEditingId] = useState(null);
+  const [editingOverall, setEditingOverall] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError('');
     try {
-      setItems((await api.budgets(month)).categories);
+      const overview = await api.budgets(month);
+      setItems(overview.categories);
+      setOverallBudget(overview.overallBudget);
     } catch (err) {
       setLoadError(err.message);
       setItems([]);
@@ -36,8 +41,8 @@ export default function BudgetsPage({ notify }) {
   }, [load]);
 
   const budgeted = items.filter((i) => i.budget != null);
-  const totalBudget = budgeted.reduce((s, i) => s + Number(i.budget), 0);
-  const totalSpent = budgeted.reduce((s, i) => s + Number(i.spent), 0);
+  const totalSpent = items.reduce((s, i) => s + Number(i.spent), 0); // all spending in the month
+  const monthly = overallBudget != null ? Number(overallBudget) : null;
   const overCount = budgeted.filter((i) => Number(i.spent) > Number(i.budget)).length;
 
   async function remove(item) {
@@ -70,31 +75,43 @@ export default function BudgetsPage({ notify }) {
         </div>
 
         <div className="stat-row">
-          <Frame label="Total budget" className="frame-stat">
-            <div className="stat-value">{loading ? '…' : formatMoney(totalBudget)}</div>
-            {!loading && (
-              <div className="stat-sub">
-                {budgeted.length} of {items.length} categories
-              </div>
+          <Frame label="Monthly budget" className="frame-stat">
+            {editingOverall ? (
+              <MonthlyBudgetEditor
+                current={overallBudget}
+                notify={notify}
+                onCancel={() => setEditingOverall(false)}
+                onSaved={() => {
+                  setEditingOverall(false);
+                  load();
+                }}
+              />
+            ) : (
+              <>
+                <div className="stat-value">{loading ? '…' : monthly != null ? formatMoney(monthly) : '—'}</div>
+                <button className="link-btn stat-link" onClick={() => setEditingOverall(true)}>
+                  {monthly != null ? 'Edit' : '+ Set monthly budget'}
+                </button>
+              </>
             )}
           </Frame>
-          <Frame label="Spent" className="frame-stat">
+          <Frame label="Spent this month" className="frame-stat">
             <div className="stat-value">{loading ? '…' : formatMoney(totalSpent)}</div>
-            {!loading && budgeted.length > 0 && (
-              <div className={`stat-sub ${totalSpent > totalBudget ? 'text-danger' : ''}`}>
-                {totalSpent > totalBudget
-                  ? `${formatMoney(totalSpent - totalBudget)} over`
-                  : `${formatMoney(totalBudget - totalSpent)} left`}
+            {!loading && monthly != null && (
+              <div className={`stat-sub ${totalSpent > monthly ? 'text-danger' : ''}`}>
+                {totalSpent > monthly
+                  ? `${formatMoney(totalSpent - monthly)} over the monthly budget`
+                  : `${formatMoney(monthly - totalSpent)} left · ${Math.round((totalSpent / monthly) * 100)}% used`}
               </div>
             )}
           </Frame>
-          <Frame label="Over budget" className="frame-stat">
+          <Frame label="Categories over budget" className="frame-stat">
             <div className={`stat-value ${overCount ? 'text-danger' : ''}`}>{loading ? '…' : overCount}</div>
             {!loading && <div className="stat-sub">{overCount === 1 ? 'category' : 'categories'}</div>}
           </Frame>
         </div>
 
-        <Frame label="Budgets by category" meta="the same budget applies every month">
+        <Frame label="Budgets by category" meta="each applies every month">
           {loadError ? (
             <div className="empty empty-error">{loadError}</div>
           ) : loading ? (

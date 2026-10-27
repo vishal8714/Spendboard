@@ -130,6 +130,8 @@ export const api = {
 
   // Budgets (one monthly amount per category)
   budgets: (month) => request('GET', `/api/budgets${query({ month })}`),
+  setOverallBudget: (amount) => request('PUT', '/api/budgets/overall', { amount }),
+  removeOverallBudget: () => request('DELETE', '/api/budgets/overall'),
   setBudget: (categoryId, amount) => request('PUT', `/api/budgets/${categoryId}`, { amount }),
   removeBudget: (categoryId) => request('DELETE', `/api/budgets/${categoryId}`),
 

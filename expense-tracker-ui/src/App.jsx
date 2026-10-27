@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, setUnauthorizedHandler } from './api.js';
-import { categoryColor } from './utils.js';
 import { avatarOf } from './avatar.js';
 import ExpensesPage from './components/ExpensesPage.jsx';
 import CategoriesPage from './components/CategoriesPage.jsx';
@@ -9,15 +8,17 @@ import AuthPage from './components/AuthPage.jsx';
 import Toasts from './components/Toasts.jsx';
 import ProfileDrawer from './components/ProfileDrawer.jsx';
 import RecurringPage from './components/RecurringPage.jsx';
+import AllExpensesPage from './components/AllExpensesPage.jsx';
 import BudgetsPage from './components/BudgetsPage.jsx';
-import { IconChart, IconList, IconRefresh, IconRepeat, IconTag, IconWallet } from './components/Icons.jsx';
+import { IconChevronDown, IconTrendUp } from './components/Icons.jsx';
 
 const PAGES = [
-  { id: 'expenses', label: 'Expenses', icon: IconList },
-  { id: 'recurring', label: 'Recurring', icon: IconRepeat },
-  { id: 'budgets', label: 'Budgets', icon: IconWallet },
-  { id: 'categories', label: 'Categories', icon: IconTag },
-  { id: 'summary', label: 'Summary', icon: IconChart },
+  { id: 'expenses', label: 'Expenses' },
+  { id: 'all', label: 'All expenses' },
+  { id: 'recurring', label: 'Recurring' },
+  { id: 'budgets', label: 'Budgets' },
+  { id: 'categories', label: 'Categories' },
+  { id: 'summary', label: 'Summary' },
 ];
 
 // "?loginError=google" is added by the backend when Google sign-in fails
@@ -121,41 +122,40 @@ export default function App() {
 
   return (
     <div className="app">
-      <header className="toolbar">
-        <div className="brand">
-          <span className="brand-mark" aria-hidden="true">
-            <i /><i /><i /><i />
-          </span>
-          <span className="brand-name">Spendboard</span>
-        </div>
+      <header className="topbar">
+        <div className="topbar-inner">
+          <div className="brand">
+            <span className="brand-logo" aria-hidden="true">
+              <IconTrendUp width={18} height={18} />
+            </span>
+            <span className="brand-name">Spendboard</span>
+          </div>
 
-        <nav className="tabs" aria-label="Pages">
-          {PAGES.map((p) => (
-            <button
-              key={p.id}
-              className={`tab ${page === p.id ? 'is-active' : ''}`}
-              onClick={() => setPage(p.id)}
-            >
-              <p.icon width={15} height={15} />
-              <span>{p.label}</span>
-            </button>
-          ))}
-        </nav>
+          <nav className="nav" aria-label="Pages">
+            {PAGES.map((p) => (
+              <button
+                key={p.id}
+                className={`nav-link ${page === p.id ? 'is-active' : ''}`}
+                aria-current={page === p.id ? 'page' : undefined}
+                onClick={() => setPage(p.id)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </nav>
 
-        <div className="toolbar-right">
-          <button className="toolbar-btn" onClick={reload} aria-label="Reload data" title="Reload data">
-            <IconRefresh width={15} height={15} />
-          </button>
           <button
-            className="avatar avatar-btn"
-            style={{ '--avatar': avatar.color }}
+            className="profile-btn"
             onClick={() => setProfileOpen(true)}
             aria-label="Open profile menu"
             aria-haspopup="dialog"
             aria-expanded={profileOpen}
             title={`${user.name} · ${user.email}`}
           >
-            {avatar.text}
+            <span className="avatar avatar-md" style={{ '--avatar': avatar.color }}>
+              {avatar.text}
+            </span>
+            <IconChevronDown width={16} height={16} />
           </button>
         </div>
       </header>
@@ -182,52 +182,11 @@ export default function App() {
       />
 
       <div className="body">
-        <aside className="sidebar">
-          <div className="panel-section">
-            <div className="panel-heading">Pages</div>
-            {PAGES.map((p) => (
-              <button
-                key={p.id}
-                className={`layer ${page === p.id ? 'is-active' : ''}`}
-                onClick={() => setPage(p.id)}
-              >
-                <p.icon width={14} height={14} />
-                {p.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="panel-section">
-            <div className="panel-heading">
-              Layers <span className="count">{categories.length}</span>
-            </div>
-            {categories.map((c) => (
-              <div key={c.id} className="layer layer-static">
-                <span className="layer-swatch" style={{ background: categoryColor(c.id) }} />
-                {c.name}
-              </div>
-            ))}
-          </div>
-
-          <div className="panel-section sidebar-user">
-            <span className="avatar avatar-md" style={{ '--avatar': avatar.color }}>
-              {avatar.text}
-            </span>
-            <div className="sidebar-user-text">
-              <span className="sidebar-user-name">{user.name}</span>
-              <span className="sidebar-user-email">{user.email}</span>
-            </div>
-          </div>
-        </aside>
-
-        <main className="main" key={`${page}-${refreshKey}`}>
-          <div className="breadcrumb">
-            <span className="muted">Expense tracker</span>
-            <span className="muted">/</span>
-            <span>{current.label}</span>
-          </div>
-
-          {page === 'expenses' && <ExpensesPage categories={categories} notify={notify} />}
+        <main className="main" key={`${page}-${refreshKey}`} aria-label={current.label}>
+          {page === 'expenses' && (
+            <ExpensesPage categories={categories} notify={notify} onNavigate={setPage} />
+          )}
+          {page === 'all' && <AllExpensesPage categories={categories} notify={notify} />}
           {page === 'recurring' && <RecurringPage categories={categories} notify={notify} />}
           {page === 'budgets' && <BudgetsPage notify={notify} />}
           {page === 'categories' && (

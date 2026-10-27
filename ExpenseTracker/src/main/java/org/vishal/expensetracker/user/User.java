@@ -3,6 +3,7 @@ package org.vishal.expensetracker.user;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
@@ -36,6 +37,10 @@ public class User {
 
     @Column(name = "avatar_color", length = 7)
     private String avatarColor;      // "#rrggbb"
+
+    /** Limit for ALL spending in a month, the same every month. Null = none. (Per-category limits live on Category.) */
+    @Column(name = "monthly_budget", precision = 10, scale = 2)
+    private BigDecimal monthlyBudget;
 
     // ----- the pending one-time code (only while the email is unverified) -----
 
@@ -140,6 +145,9 @@ public class User {
     public String getAvatarInitials() { return avatarInitials; }
 
     public String getAvatarColor() { return avatarColor; }
+
+    public BigDecimal getMonthlyBudget() { return monthlyBudget; }
+    public void setMonthlyBudget(BigDecimal monthlyBudget) { this.monthlyBudget = monthlyBudget; }
 
     public String getVerificationCodeHash() { return verificationCodeHash; }
 
