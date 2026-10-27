@@ -4,7 +4,7 @@ import { formatDate, formatMoney } from '../utils.js';
 import Frame from './Frame.jsx';
 import CategoryChip from './CategoryChip.jsx';
 import ExpenseInspector from './ExpenseInspector.jsx';
-import { IconEdit, IconTrash, IconX } from './Icons.jsx';
+import { IconEdit, IconRepeat, IconTrash, IconX } from './Icons.jsx';
 
 const noFilters = { from: '', to: '', categoryId: '' };
 
@@ -125,7 +125,14 @@ export default function ExpensesPage({ categories, notify }) {
                         onClick={() => setEditing(e)}
                       >
                         <td className="muted mono">{formatDate(e.date)}</td>
-                        <td className="desc">{e.description}</td>
+                        <td className="desc">
+                          {e.description}
+                          {e.recurringExpenseId && (
+                            <span className="recurring-mark" title="Added automatically by a recurring expense">
+                              <IconRepeat width={12} height={12} />
+                            </span>
+                          )}
+                        </td>
                         <td>
                           <CategoryChip category={e.category} />
                         </td>

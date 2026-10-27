@@ -34,6 +34,10 @@ public class Expense {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    /** Set when the expense was created by a recurring rule; null for expenses added by hand. */
+    @Column(name = "recurring_expense_id")
+    private Long recurringExpenseId;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
@@ -48,6 +52,13 @@ public class Expense {
         this.date = date;
         this.category = category;
         this.user = user;
+    }
+
+    public static Expense fromRecurring(BigDecimal amount, String description, LocalDate date,
+                                        Category category, User user, Long recurringExpenseId) {
+        Expense expense = new Expense(amount, description, date, category, user);
+        expense.recurringExpenseId = recurringExpenseId;
+        return expense;
     }
 
     public Long getId() { return id; }
@@ -65,6 +76,8 @@ public class Expense {
     public void setCategory(Category category) { this.category = category; }
 
     public User getUser() { return user; }
+
+    public Long getRecurringExpenseId() { return recurringExpenseId; }
 
     public Instant getCreatedAt() { return createdAt; }
 }

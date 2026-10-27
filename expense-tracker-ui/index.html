@@ -11,6 +11,12 @@
       rel="stylesheet"
     />
     <title>Spendboard</title>
+    <script>
+      // Apply the saved theme before the first paint (see src/theme.js)
+      try {
+        if (localStorage.getItem('spendboard-theme') === 'dark') document.documentElement.dataset.theme = 'dark';
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

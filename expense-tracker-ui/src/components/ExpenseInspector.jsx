@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '../api.js';
 import { todayIso } from '../utils.js';
+import { warnIfOverBudget } from '../budget.js';
 import { IconX } from './Icons.jsx';
 
 const emptyForm = () => ({
@@ -62,6 +63,7 @@ export default function ExpenseInspector({ categories, editing, onSaved, onCance
         setForm((f) => ({ ...emptyForm(), date: f.date, categoryId: f.categoryId }));
       }
       onSaved();
+      warnIfOverBudget(body.categoryId, body.date, notify);
     } catch (err) {
       if (err instanceof ApiError && Object.keys(err.fieldErrors).length) {
         setErrors(err.fieldErrors);

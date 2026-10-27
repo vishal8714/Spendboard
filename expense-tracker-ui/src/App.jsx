@@ -1,15 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, setUnauthorizedHandler } from './api.js';
 import { categoryColor } from './utils.js';
+import { avatarOf } from './avatar.js';
 import ExpensesPage from './components/ExpensesPage.jsx';
 import CategoriesPage from './components/CategoriesPage.jsx';
 import SummaryPage from './components/SummaryPage.jsx';
 import AuthPage from './components/AuthPage.jsx';
 import Toasts from './components/Toasts.jsx';
-import { IconChart, IconList, IconLogout, IconRefresh, IconTag } from './components/Icons.jsx';
+import ProfileDrawer from './components/ProfileDrawer.jsx';
+import RecurringPage from './components/RecurringPage.jsx';
+import BudgetsPage from './components/BudgetsPage.jsx';
+import { IconChart, IconList, IconRefresh, IconRepeat, IconTag, IconWallet } from './components/Icons.jsx';
 
 const PAGES = [
   { id: 'expenses', label: 'Expenses', icon: IconList },
+  { id: 'recurring', label: 'Recurring', icon: IconRepeat },
+  { id: 'budgets', label: 'Budgets', icon: IconWallet },
   { id: 'categories', label: 'Categories', icon: IconTag },
   { id: 'summary', label: 'Summary', icon: IconChart },
 ];
@@ -22,14 +28,6 @@ function readLoginError() {
   return 'Google sign-in failed. Please try again or use your email and password.';
 }
 
-const initials = (name = '') =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0].toUpperCase())
-    .join('') || '?';
-
 export default function App() {
   const [user, setUser] = useState(undefined); // undefined = checking, null = logged out
   const [loginError] = useState(readLoginError);
@@ -37,12 +35,14 @@ export default function App() {
   const [categories, setCategories] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [profileOpen, setProfileOpen] = useState(false);
   const nextToastId = useRef(1);
+  const closeProfile = useCallback(() => setProfileOpen(false), []);
 
   const notify = useCallback((type, message) => {
     const id = nextToastId.current++;
     setToasts((t) => [...t, { id, type, message }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), type === 'error' ? 6000 : 3000);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), type === 'error' || type === 'warning' ? 6000 : 3000);
   }, []);
 
   // Any 401 from the API means the session is gone → show the login screen
@@ -70,7 +70,13 @@ export default function App() {
     if (user) loadCategories();
   }, [user, loadCategories]);
 
+  function reload() {
+    loadCategories();
+    setRefreshKey((k) => k + 1);
+  }
+
   async function logout() {
+    setProfileOpen(false);
     try {
       await api.logout();
     } catch {
@@ -79,6 +85,16 @@ export default function App() {
     setUser(null);
     setCategories([]);
     setPage('expenses');
+  }
+
+  // Throws on failure so the drawer can show the error and stay open
+  async function deleteAccount() {
+    await api.deleteAccount();
+    setProfileOpen(false);
+    setUser(null);
+    setCategories([]);
+    setPage('expenses');
+    notify('success', 'Your account has been deleted');
   }
 
   if (user === undefined) {
@@ -101,6 +117,7 @@ export default function App() {
   }
 
   const current = PAGES.find((p) => p.id === page);
+  const avatar = avatarOf(user);
 
   return (
     <div className="app">
@@ -126,25 +143,43 @@ export default function App() {
         </nav>
 
         <div className="toolbar-right">
-          <button
-            className="toolbar-btn"
-            onClick={() => {
-              loadCategories();
-              setRefreshKey((k) => k + 1);
-            }}
-            aria-label="Reload data"
-            title="Reload data"
-          >
+          <button className="toolbar-btn" onClick={reload} aria-label="Reload data" title="Reload data">
             <IconRefresh width={15} height={15} />
           </button>
-          <span className="avatar" title={`${user.name} · ${user.email}`}>
-            {initials(user.name)}
-          </span>
-          <button className="toolbar-btn" onClick={logout} aria-label="Log out" title="Log out">
-            <IconLogout width={15} height={15} />
+          <button
+            className="avatar avatar-btn"
+            style={{ '--avatar': avatar.color }}
+            onClick={() => setProfileOpen(true)}
+            aria-label="Open profile menu"
+            aria-haspopup="dialog"
+            aria-expanded={profileOpen}
+            title={`${user.name} · ${user.email}`}
+          >
+            {avatar.text}
           </button>
         </div>
       </header>
+
+      <ProfileDrawer
+        open={profileOpen}
+        onClose={closeProfile}
+        user={user}
+        onComingSoon={(label) => notify('info', `${label} is coming soon`)}
+        onDeleteAccount={deleteAccount}
+        onProfileUpdated={(updated) => {
+          setUser(updated);
+          notify('success', 'Your profile has been updated');
+        }}
+        onPasswordChanged={(updated, hadPassword) => {
+          setUser(updated);
+          notify('success', hadPassword ? 'Your password has been changed' : 'Your password has been set');
+        }}
+        onReload={() => {
+          reload();
+          setProfileOpen(false);
+        }}
+        onLogout={logout}
+      />
 
       <div className="body">
         <aside className="sidebar">
@@ -175,7 +210,9 @@ export default function App() {
           </div>
 
           <div className="panel-section sidebar-user">
-            <span className="avatar avatar-light">{initials(user.name)}</span>
+            <span className="avatar avatar-md" style={{ '--avatar': avatar.color }}>
+              {avatar.text}
+            </span>
             <div className="sidebar-user-text">
               <span className="sidebar-user-name">{user.name}</span>
               <span className="sidebar-user-email">{user.email}</span>
@@ -191,6 +228,8 @@ export default function App() {
           </div>
 
           {page === 'expenses' && <ExpensesPage categories={categories} notify={notify} />}
+          {page === 'recurring' && <RecurringPage categories={categories} notify={notify} />}
+          {page === 'budgets' && <BudgetsPage notify={notify} />}
           {page === 'categories' && (
             <CategoriesPage categories={categories} onChanged={loadCategories} notify={notify} />
           )}

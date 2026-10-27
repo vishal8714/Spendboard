@@ -7,6 +7,7 @@ import org.vishal.expensetracker.auth.CurrentUser;
 import org.vishal.expensetracker.common.ConflictException;
 import org.vishal.expensetracker.common.ResourceNotFoundException;
 import org.vishal.expensetracker.expense.ExpenseRepository;
+import org.vishal.expensetracker.recurring.RecurringExpenseRepository;
 import org.vishal.expensetracker.user.UserRepository;
 
 import java.util.List;
@@ -17,15 +18,18 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final ExpenseRepository expenseRepository;
+    private final RecurringExpenseRepository recurringRepository;
     private final UserRepository userRepository;
     private final CurrentUser currentUser;
 
     public CategoryService(CategoryRepository categoryRepository,
                            ExpenseRepository expenseRepository,
+                           RecurringExpenseRepository recurringRepository,
                            UserRepository userRepository,
                            CurrentUser currentUser) {
         this.categoryRepository = categoryRepository;
         this.expenseRepository = expenseRepository;
+        this.recurringRepository = recurringRepository;
         this.userRepository = userRepository;
         this.currentUser = currentUser;
     }
@@ -69,6 +73,10 @@ public class CategoryService {
         if (expenseRepository.existsByCategoryId(id)) {
             throw new ConflictException(
                     "Category '" + category.getName() + "' is used by existing expenses and cannot be deleted");
+        }
+        if (recurringRepository.existsByCategoryId(id)) {
+            throw new ConflictException(
+                    "Category '" + category.getName() + "' is used by a recurring expense and cannot be deleted");
         }
         categoryRepository.delete(category);
     }

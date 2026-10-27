@@ -2,6 +2,7 @@ package org.vishal.expensetracker.expense;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -15,6 +16,15 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     Optional<Expense> findByIdAndUserId(Long id, Long userId);
 
     boolean existsByCategoryId(Long categoryId);
+
+    /** The rule is being deleted: its past expenses stay, they just stop pointing at it. */
+    @Modifying
+    @Query("update Expense e set e.recurringExpenseId = null where e.recurringExpenseId = :recurringId")
+    void unlinkRecurring(@Param("recurringId") Long recurringId);
+
+    @Modifying
+    @Query("delete from Expense e where e.user.id = :userId")
+    void deleteAllByUserId(@Param("userId") Long userId);
 
     @Query("""
             select e from Expense e

@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.vishal.expensetracker.category.Category;
 import org.vishal.expensetracker.category.CategoryRepository;
+import org.vishal.expensetracker.expense.ExpenseRepository;
+import org.vishal.expensetracker.recurring.RecurringExpenseRepository;
 
 import java.util.List;
 import java.util.Locale;
@@ -23,10 +25,17 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final ExpenseRepository expenseRepository;
+    private final RecurringExpenseRepository recurringRepository;
 
-    public UserService(UserRepository userRepository, CategoryRepository categoryRepository) {
+    public UserService(UserRepository userRepository,
+                       CategoryRepository categoryRepository,
+                       ExpenseRepository expenseRepository,
+                       RecurringExpenseRepository recurringRepository) {
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
+        this.expenseRepository = expenseRepository;
+        this.recurringRepository = recurringRepository;
     }
 
     public static String normalizeEmail(String email) {
@@ -89,6 +98,33 @@ public class UserService {
         User user = userRepository.save(User.withGoogle(normalized, displayName, googleId));
         createDefaultCategories(user);
         return user;
+    }
+
+    /** Blank initials or colour mean "automatic" and are stored as null. Returns null if the user no longer exists. */
+    @Transactional
+    public User updateProfile(Long userId, String name, String avatarInitials, String avatarColor) {
+        User user = getById(userId);
+        if (user != null) {
+            user.updateProfile(                        // dirty checking saves the change
+                    name.trim(),
+                    blankToNull(avatarInitials) == null ? null : avatarInitials.trim().toUpperCase(Locale.ROOT),
+                    blankToNull(avatarColor) == null ? null : avatarColor.trim().toLowerCase(Locale.ROOT));
+        }
+        return user;
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s;
+    }
+
+    /** Permanently removes the user and everything they own. Categories go last (the others point at them). */
+    @Transactional
+    public void deleteAccount(Long userId) {
+        expenseRepository.deleteAllByUserId(userId);
+        recurringRepository.deleteAllByUserId(userId);
+        categoryRepository.deleteAllByUserId(userId);
+        userRepository.deleteById(userId);
+        log.info("Deleted account {}", userId);
     }
 
     private void createDefaultCategories(User user) {

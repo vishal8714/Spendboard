@@ -101,6 +101,12 @@ export const api = {
   resetPassword: (email, code, newPassword) =>
     request('POST', '/api/auth/reset-password', { email, code, newPassword }, { authCall: true }),
   logout: () => request('POST', '/api/auth/logout', undefined, { authCall: true }),
+  deleteAccount: () => request('DELETE', '/api/auth/me'),
+  // avatarInitials / avatarColor: '' means automatic
+  updateProfile: ({ name, avatarInitials, avatarColor }) =>
+    request('PUT', '/api/auth/me', { name, avatarInitials, avatarColor }),
+  changePassword: (currentPassword, newPassword) =>
+    request('POST', '/api/auth/change-password', { currentPassword, newPassword }),
   googleLoginUrl: '/oauth2/authorization/google',
 
   // Expenses
@@ -114,6 +120,18 @@ export const api = {
   createCategory: (name) => request('POST', '/api/categories', { name }),
   updateCategory: (id, name) => request('PUT', `/api/categories/${id}`, { name }),
   deleteCategory: (id) => request('DELETE', `/api/categories/${id}`),
+
+  // Recurring expenses
+  listRecurring: () => request('GET', '/api/recurring-expenses'),
+  createRecurring: (body) => request('POST', '/api/recurring-expenses', body),
+  updateRecurring: (id, body) => request('PUT', `/api/recurring-expenses/${id}`, body),
+  setRecurringActive: (id, active) => request('POST', `/api/recurring-expenses/${id}/active`, { active }),
+  deleteRecurring: (id) => request('DELETE', `/api/recurring-expenses/${id}`),
+
+  // Budgets (one monthly amount per category)
+  budgets: (month) => request('GET', `/api/budgets${query({ month })}`),
+  setBudget: (categoryId, amount) => request('PUT', `/api/budgets/${categoryId}`, { amount }),
+  removeBudget: (categoryId) => request('DELETE', `/api/budgets/${categoryId}`),
 
   // Summary
   monthlySummary: (month) => request('GET', `/api/summary${query({ month })}`),

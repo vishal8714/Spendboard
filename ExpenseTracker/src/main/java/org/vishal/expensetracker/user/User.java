@@ -29,6 +29,14 @@ public class User {
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified;
 
+    // ----- profile circle; null means automatic (initials from the name, default colour) -----
+
+    @Column(name = "avatar_initials", length = 2)
+    private String avatarInitials;
+
+    @Column(name = "avatar_color", length = 7)
+    private String avatarColor;      // "#rrggbb"
+
     // ----- the pending one-time code (only while the email is unverified) -----
 
     @Column(name = "verification_code_hash")
@@ -74,6 +82,12 @@ public class User {
         this.name = name;
         this.passwordHash = passwordHash;
     }
+    public void updateProfile(String name, String avatarInitials, String avatarColor) {
+        this.name = name;
+        this.avatarInitials = avatarInitials;
+        this.avatarColor = avatarColor;
+    }
+
     public void changePassword(String passwordHash) {
         this.passwordHash = passwordHash;
     }
@@ -122,6 +136,10 @@ public class User {
     public String getGoogleId() { return googleId; }
 
     public boolean isEmailVerified() { return emailVerified; }
+
+    public String getAvatarInitials() { return avatarInitials; }
+
+    public String getAvatarColor() { return avatarColor; }
 
     public String getVerificationCodeHash() { return verificationCodeHash; }
 

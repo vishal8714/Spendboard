@@ -32,6 +32,7 @@ public final class ExpenseMapper {
                 expense.getDescription(),
                 expense.getDate(),
                 CategoryMapper.toResponse(expense.getCategory()),
+                expense.getRecurringExpenseId(),
                 expense.getCreatedAt()
         );
     }

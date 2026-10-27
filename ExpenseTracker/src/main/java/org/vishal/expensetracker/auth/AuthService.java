@@ -93,6 +93,41 @@ public class AuthService {
         return user;
     }
 
+    /**
+     * Logged-in password change. The current password must be given, unless the account has none yet
+     * (signed up with Google): then this sets its first password, so it can also sign in with email.
+     */
+    @Transactional
+    public User changePassword(Long userId, ChangePasswordRequest request) {
+        User user = userService.getById(userId);
+        if (user == null) {
+            throw new UnauthorizedException("You need to log in");
+        }
+
+        if (user.getPasswordHash() != null) {
+            String current = request.currentPassword();
+            if (current == null || current.isEmpty()) {
+                throw new BadRequestException("Enter your current password");
+            }
+            if (!passwordEncoder.matches(current, user.getPasswordHash())) {
+                throw new WrongPasswordException();
+            }
+            if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
+                throw new BadRequestException("The new password must be different from the current one");
+            }
+        }
+
+        user.changePassword(passwordEncoder.encode(request.newPassword()));
+        return user;
+    }
+
+    /** A BadRequestException the controller can count towards the rate limit. */
+    public static class WrongPasswordException extends BadRequestException {
+        public WrongPasswordException() {
+            super("Your current password is incorrect");
+        }
+    }
+
     private void requireValidCode(User user, String code) {
         switch (verification.check(user, code)) {
             case VERIFIED -> { }

@@ -12,5 +12,6 @@ public record ExpenseResponse(
         String description,
         LocalDate date,
         CategoryResponse category,
+        Long recurringExpenseId,     // null unless created by a recurring rule
         Instant createdAt
 ) {}
