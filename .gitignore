@@ -1,2 +1,6 @@
 # Claude Code
 .claude/
+docker.env
+ExpenseTracker/src/main/resources/static/
+.vscode/
+*.pem

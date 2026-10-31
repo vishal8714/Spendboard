@@ -1,0 +1,22 @@
+# Never copy secrets into the image
+**/.env
+**/*.env
+
+# Local tools and editor folders
+.git
+.claude
+.vscode
+**/.idea
+**/*.iml
+
+# Build output and downloads (the build recreates them)
+**/.gradle
+**/build
+**/bin
+**/node_modules
+frontend/dist
+ExpenseTracker/src/main/resources/static
+
+# Logs
+**/*.log
+**/run-log.txt
